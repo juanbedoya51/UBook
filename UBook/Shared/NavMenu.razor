@@ -1,0 +1,155 @@
+﻿@inject IJSRuntime JSRuntime
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <div>
+            <Button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+                <span class="navbar-toggler-icon"></span>
+            </Button>
+            <a href="">
+                <img src="Imagenes/ubookr.png" style="width:90px" />
+            </a>
+        </div>
+        <div class="ocultar">
+            @if (rol == "")
+            {
+                <input type="search" class="navbar-toggler" style="background: #ececec; color:black;">
+
+                <a href="/acceder">
+                    <Icon Name="IconName.PersonCircle" Size="IconSize.x2" Color="IconColor.Light" />
+                </a>
+            }
+            else if (rol == "user")
+            {
+                <input type="search" class="navbar-toggler" style="background: #ececec; color:black;">
+
+                <a href="/editarcuenta">
+                    <Icon Name="IconName.PersonCircle" Size="IconSize.x2" Color="IconColor.Light" />
+                </a>
+            }
+            else if (rol == "admin")
+            {
+                <h3 style="color: white">Administrador</h3>
+            }
+            else if (rol == "root")
+            {
+                <h3 style="color: white">Root</h3>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> Inicio
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="ubicaciones">
+                <span class="oi bi-globe-americas" aria-hidden="true"></span> Ubicaciones
+            </NavLink>
+        </div>
+        @if (rol != "root")
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="librolistado">
+                    <span class="oi oi-book" aria-hidden="true"></span> Listado de Libros
+                </NavLink>
+            </div>
+        }
+        @if (rol == "")
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="crearcuenta">
+                    <span class="oi bi-person-add" aria-hidden="true"></span> Crear Cuenta
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="acceder">
+                    <span class="oi oi-account-login" aria-hidden="true"></span> Iniciar Sesion
+                </NavLink>
+            </div>
+        }
+        else if (rol == "root")
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="crearadmin">
+                    <span class="oi bi-person-vcard-fill" aria-hidden="true"></span> Crear Admin
+                </NavLink>
+            </div>
+        }
+        else if (rol == "admin")
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="eliminarlibro">
+                    <span class="oi bi-trash3-fill" aria-hidden="true"></span> Eliminar Libro
+                </NavLink>
+            </div>
+        }
+        else if (rol == "user")
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="editarcuenta">
+                    <span class="oi bi-person-gear" aria-hidden="true"></span> Editar Cuenta
+                </NavLink>
+            </div>
+        }
+        @if (rol != "")
+        {
+            <div class="nav-item px-3" @onclick="Salir">
+                <NavLink class="nav-link" href="#" Match="NavLinkMatch.All">
+                    <div class="col-sm">
+                        <span class="oi bi-box-arrow-right" aria-hidden="true"></span> Cerrar Sesión
+                    </div>
+                </NavLink>
+            </div>
+        }
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private string rol = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "user");
+        if (temp != null)
+        {
+            rol = "user";
+        }
+        else
+        {
+            temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "admin");
+            if (temp != null)
+            {
+                rol = "admin";
+            }
+            else
+            {
+                temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "root");
+                if (temp != null)
+                {
+                    rol = "root";
+                }
+            }
+        }
+    }
+
+    public async Task Salir()
+    {
+        await JSRuntime.InvokeAsync<string>("localStorage.removeItem", "user");
+        await JSRuntime.InvokeAsync<string>("localStorage.removeItem", "admin");
+        await JSRuntime.InvokeAsync<string>("localStorage.removeItem", "root");
+        await JSRuntime.InvokeVoidAsync("location.reload");
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

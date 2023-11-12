@@ -1,0 +1,142 @@
+﻿@page "/recuperarcontrasena"
+@inject HttpClient HttpClient
+@using System;
+@using System.Net.Http
+@using System.Net.Http.Json
+@using UBook.Data
+@using Newtonsoft.Json;
+@using System.Threading.Tasks;
+
+@inject NavigationManager oMenu
+
+<PageTitle>Recuperar Contraseña</PageTitle>
+<Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.BottomRight" />
+
+<div class="row" style="color: #8F8E8E;font-family: 'Poppins';">
+    <div class="col-md-4"></div>
+    <div class="col-md-4" style="text-align:center">
+        @if (etapa == 1)
+        {
+            @if (CuentaRec.pregunta != null && CuentaRec.pregunta != "")
+            {
+                <h3>Pregunta de recuperación</h3>
+                <div class="mb-3" style="text-align:left">
+                    <label class="form-label">@CuentaRec.pregunta</label>
+                    <input type="text" class="form-control" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="CuentaRec.respuesta">
+                </div>
+                <Button class="btn btn-primary" style="background-image: linear-gradient(90deg, #8C52FF 0%, #5CE1E6 100%); width:70%" @onclick="EnviarRespuesta">Enviar</Button>
+            }
+            else
+            {
+                <h3>¿Has olvidado la contraseña?</h3>
+                <div class="mb-3" style="text-align:left">
+                    <label for="exampleInputEmail1" class="form-label">CORREO ELECTRONICO</label>
+                    <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="RecuCuenta.correo">
+                </div>
+                <Button class="btn btn-primary" style="background-image: linear-gradient(90deg, #8C52FF 0%, #5CE1E6 100%); width:70%" @onclick="BuscarCuenta">Ingresar</Button>
+            }
+
+        }
+        else
+        {
+
+            <div class="mb-3" style="text-align:left">
+                <label for="exampleInputEmail1" class="form-label">Ingresa la nueva contraseña</label>
+                <input type="password" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="CuentaRec.contrasena">
+            </div>
+            <div class="mb-3" style="text-align:left">
+                <label for="exampleInputPassword2" class="form-label">Repetir contraseña</label>
+                <input type="password" class="form-control" id="exampleInputPassword2" style="background: #ececec;" @bind-value="Contrasena2">
+            </div>
+            if (CuentaRec.ID == 0)
+            {
+                <a href="/acceder">Iniciar Sesion</a>
+            }
+            else
+            {
+                <Button class="btn btn-primary" style="background-image: linear-gradient(90deg, #8C52FF 0%, #5CE1E6 100%); width:70%" @onclick="CambiarContrasena">Cambiar</Button>
+            }
+        }
+
+        <img src="Imagenes/ubook.png" style="width:80%" />
+    </div>
+    <div class="col-md-4"></div>
+</div>
+@code {
+    public class Recuperar
+    {
+        public string correo { get; set; }
+    }
+
+    private Recuperar RecuCuenta = new Recuperar();
+    private string Url = "/Ubook/recuperarcon.php";
+    private Cuenta CuentaRec = new Cuenta();
+    private int etapa = 1;
+    private string Contrasena2 { get; set; }
+
+    private async Task BuscarCuenta()
+    {
+        var response = await HttpClient.PostAsJsonAsync<Recuperar>(Url, RecuCuenta);
+        var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<Cuenta>>().Result;
+        if (oRespuesta.status == "success")
+        {
+            CuentaRec = oRespuesta.data;
+        }
+        else
+        {
+            ShowMessage(ToastType.Danger, oRespuesta.message);
+        }
+    }
+
+    private async Task EnviarRespuesta()
+    {
+        var response = await HttpClient.PutAsJsonAsync<Cuenta>(Url, CuentaRec);
+        var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<Cuenta>>().Result;
+        if (oRespuesta.status == "success")
+        {
+            oRespuesta.data.contrasena = "";
+            CuentaRec = oRespuesta.data;
+            etapa = 2;
+        }
+        else
+        {
+            ShowMessage(ToastType.Danger, oRespuesta.message);
+        }
+    }
+
+    private async Task CambiarContrasena()
+    {
+        if (CuentaRec.contrasena == Contrasena2)
+        {
+            var response = await HttpClient.PutAsJsonAsync<Cuenta>("Ubook/usuario.php", CuentaRec);
+            var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<Cuenta>>().Result;
+            if (oRespuesta.status == "success")
+            {
+                ShowMessage(ToastType.Success, "Contraseña modificada exitosamente");
+                CuentaRec = new Cuenta();
+                Contrasena2 = "";
+            }
+            else
+            {
+                ShowMessage(ToastType.Danger, oRespuesta.message);
+            }
+        }
+        else
+        {
+            ShowMessage(ToastType.Danger, "Las contraseñas no coinciden.");
+        }
+    }
+
+    List<ToastMessage> messages = new List<ToastMessage>();
+
+    private void ShowMessage(ToastType toastType, string obser) => messages.Add(CreateToastMessage(toastType, obser));
+
+    private ToastMessage CreateToastMessage(ToastType toastType, string obser)
+    => new ToastMessage
+        {
+            Type = toastType,
+            Title = "UBook Notificación",
+            HelpText = $"{DateTime.Now}",
+            Message = obser,
+        };
+}

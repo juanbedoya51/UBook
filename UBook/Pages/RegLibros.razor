@@ -1,0 +1,216 @@
+﻿@page "/reglibro/{Id:int}"
+@page "/reglibro"
+@inject HttpClient HttpClient
+@using System;
+@using System.Net.Http
+@using System.Net.Http.Json
+@using UBook.Data
+@using System.Globalization;
+@using Newtonsoft.Json;
+@inject NavigationManager oMenu
+@inject IJSRuntime JSRuntime
+
+@if (carga)
+{
+    <div class="d-flex justify-content-center" style="margin-top:200px">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <PageTitle>Info Libro</PageTitle>
+    <Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.BottomRight" />
+
+    <div class="row" style="color: #8F8E8E;font-family: 'Poppins';">
+        <div class="col-md-6" style="text-align:center">
+            @if (!string.IsNullOrEmpty(imagenBase64))
+            {
+                <img src="@($"data:image/jpeg;base64,{imagenBase64}")" style="width:400px" />
+                <Button class="btn btn-primary" style="background-color: #ff0000" @onclick="QuitarImagen">Quitar</Button>
+            }
+            else
+            {
+                <img src="Imagenes/ubook.png" style="width:400px" />
+            }
+        </div>
+        <div class="col-md-4" style="text-align:center">
+            <h3>Info. Libro</h3>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="nombre" class="form-label">Nombre del Libro</label>
+                        <input type="text" class="form-control" id="nombre" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="@nuevoLibro.nombre">
+                    </div>
+                    <div class="mb-3" style="text-align:left">
+                        <label for="autor" class="form-label">Autor del Libro</label>
+                        <input type="text" class="form-control" id="autor" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="@nuevoLibro.autor">
+                    </div>
+                    <div class="mb-3" style="text-align:left">
+                        <label for="editorial" class="form-label">Editorial</label>
+                        <input type="text" class="form-control" id="editorial" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="@nuevoLibro.editorial">
+                    </div>
+                    <div class="mb-3" style="text-align:left">
+                        <label for="genero" class="form-label">Genero del Libro</label>
+                        <select class="form-select" aria-label="Default select example" id="genero" style="background: #ececec;" @bind="@nuevoLibro.genero">
+                            <option selected disabled>Seleccionar</option>
+                            <option value="Aventuras">Aventuras</option>
+                            <option value="Ciencia Ficcion">Ciencia Ficción</option>
+                            <option value="Policiaca">Policíaca</option>
+                            <option value="Terror y misterio">Terror y misterio</option>
+                            <option value="Romantica">Romántica</option>
+                            <option value="Humor">Humor</option>
+                            <option value="Poesia">Poesía</option>
+                            <option value="Mitologia">Mitología</option>
+                            <option value="Teatro">Teatro</option>
+                            <option value="Cuento">Cuento</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" style="text-align:left">
+                        <label for="idioma" class="form-label">Idioma</label>
+                        <select class="form-select" aria-label="Default select example" id="idioma" style="background: #ececec;" @bind="@nuevoLibro.idioma">
+                            <option selected disabled>Seleccionar</option>
+                            <option value="Español">Español</option>
+                            <option value="Inglés">Inglés</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="paginas" class="form-label">No. páginas</label>
+                        <input type="number" class="form-control col-2" id="paginas" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="@nuevoLibro.nopagina">
+                    </div>
+                    <div class="mb-3" style="text-align:left">
+                        <label for="issn" class="form-label">ISSN</label>
+                        <input type="text" class="form-control" id="issn" style="background: #ececec;" @bind-value="@nuevoLibro.issn">
+                    </div>
+                    <div class="mb-3" style="text-align:left">
+                        <label for="exampleInputFN" class="form-label">Fecha</label>
+                        <input type="date" class="form-control" id="exampleInputFN" style="background: #ececec;" @bind-value="@nuevoLibro.fecha">
+                    </div>
+                    <div class="mb-3" style="text-align:left">
+                        <label for="precio" class="form-label">Precio</label>
+                        <CurrencyInput TValue="decimal" @bind-Value="@nuevoLibro.precio" Placeholder="Enter amount" class="form-control" id="precio" style="background: #ececec;"/>
+                    </div>
+                    <div class="mb-3" style="text-align:left">
+                        <label for="imagenInput" class="form-label">Portada</label>
+                        <InputFile id="imagenInput" OnChange="HandleFileChange" class="form-control" />
+                    </div>
+                </div>
+            </div>
+            @if (Id == 0)
+            {
+                <Button class="btn btn-primary" style="background-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, #3533CD 100%); width:70%" @onclick="@CrearLibro">INGRESAR</Button>
+            }
+            else
+            {
+                <Button class="btn btn-primary" style="background-color: #f17502; width:70%" @onclick="@ModificarLibro">MODIFICAR</Button>
+            }
+
+        </div>
+    </div>
+}
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Libro nuevoLibro = new Libro();
+    private string mensaje = "";
+    private string Url = "/Ubook/libros.php";
+    private bool carga { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        carga = true;
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "admin");
+        if (temp != null)
+        {
+            if (Id != 0)
+            {
+                var oRespuesta = await HttpClient.GetFromJsonAsync<Respuesta<Libro>>(Url + "?id=" + Id);
+                if (oRespuesta.status == "success")
+                {
+                    nuevoLibro = oRespuesta.data;
+                    imagenBase64 = nuevoLibro.imagen;
+                }
+            }
+            else
+            {
+
+                nuevoLibro.fecha = DateTime.Now;
+                nuevoLibro.vendido = 0;
+            }
+            carga = false;
+        }
+        else
+        {
+            oMenu.NavigateTo("/notaccess");
+        }
+    }
+
+    private async Task CrearLibro()
+    {
+        var response = await HttpClient.PostAsJsonAsync<Libro>(Url, nuevoLibro);
+        var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<Libro>>().Result;
+        if (oRespuesta.status == "success")
+        {
+            ShowMessage(ToastType.Success, oRespuesta.message);
+            oMenu.NavigateTo("/reglibro/" + oRespuesta.data.ID);
+            await OnInitializedAsync();
+        }
+        else
+        {
+            ShowMessage(ToastType.Danger, oRespuesta.message);
+        }
+    }
+
+    private async Task ModificarLibro()
+    {
+        var response = await HttpClient.PutAsJsonAsync<Libro>(Url, nuevoLibro);
+        var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<Libro>>().Result;
+        if (oRespuesta.status == "success")
+        {
+            ShowMessage(ToastType.Success, oRespuesta.message);
+            await OnInitializedAsync();
+        }
+        else
+        {
+            ShowMessage(ToastType.Danger, oRespuesta.message);
+        }
+    }
+
+    private async Task QuitarImagen()
+    {
+        imagenBase64 = "";
+        nuevoLibro.imagen = imagenBase64;
+    }
+
+    private string imagenBase64;
+
+    private async Task HandleFileChange(InputFileChangeEventArgs e)
+    {
+        var archivo = e.GetMultipleFiles().FirstOrDefault();
+        if (archivo != null)
+        {
+            var buffer = new byte[archivo.Size];
+            await archivo.OpenReadStream().ReadAsync(buffer);
+            imagenBase64 = Convert.ToBase64String(buffer);
+            nuevoLibro.imagen = imagenBase64;
+        }
+    }
+
+    List<ToastMessage> messages = new List<ToastMessage>();
+
+    private void ShowMessage(ToastType toastType, string obser) => messages.Add(CreateToastMessage(toastType, obser));
+
+    private ToastMessage CreateToastMessage(ToastType toastType, string obser)
+    => new ToastMessage
+        {
+            Type = toastType,
+            Title = "UBook Notificación",
+            HelpText = $"{DateTime.Now}",
+            Message = obser,
+        };
+}

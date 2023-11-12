@@ -1,0 +1,133 @@
+﻿@page "/crearcuenta"
+@inject HttpClient HttpClient
+@using System;
+@using System.Net.Http
+@using System.Net.Http.Json
+@inject NavigationManager oMenu
+@using UBook.Data
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Crear una cuenta nueva</PageTitle>
+<Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.BottomRight" />
+
+<div class="row" style="color: #8F8E8E;font-family: 'Poppins';">
+    <div class="col-md-6" style="text-align:center">
+        <img src="Imagenes/ubook.png" style="width:400px" />
+    </div>
+    <div class="col-md-4" style="text-align:center">
+        <h3>Crear una cuenta nueva</h3>
+
+        <div class="mb-3" style="text-align:left">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input type="email" class="form-control" id="nombre" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevoCuenta.nombre">
+        </div>
+        <div class="mb-3" style="text-align:left">
+            <label for="Email" class="form-label">Correo electrónico</label>
+            <input type="email" class="form-control" id="Email" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevoCuenta.correo">
+        </div>
+        <div class="mb-3" style="text-align:left">
+            <label for="fn" class="form-label">Fecha de nacimiento</label>
+            <input type="date" class="form-control" id="fn" style="background: #ececec;" @bind-value="nuevoCuenta.fecha_nacimiento">
+        </div>
+        <div class="mb-3" style="text-align:left">
+            <label for="pregunta" class="form-label">Pregunta de recuperación</label>
+            <input type="text" class="form-control" id="pregunta" style="background: #ececec;" @bind-value="nuevoCuenta.pregunta">
+        </div>
+        <div class="mb-3" style="text-align:left">
+            <label class="form-label">Respuesta(Una sola palabra en minusculas)</label>
+            <input type="text" class="form-control" style="background: #ececec;" @bind-value="nuevoCuenta.respuesta">
+        </div>
+        <div class="mb-3" style="text-align:left">
+            <label for="contrasena1" class="form-label">Clave</label>
+            <input type="password" class="form-control" id="contrasena1" style="background: #ececec;" @bind-value="nuevoCuenta.contrasena">
+        </div>
+        <div class="mb-3" style="text-align:left">
+            <label for="contrasena2" class="form-label"> Repetir Clave</label>
+            <input type="password" class="form-control" id="contrasena2" style="background: #ececec;" @bind-value="Contrasena2">
+        </div>
+        <Button class="btn btn-primary" style="background-image: linear-gradient(90deg, #8C52FF 0%, #5CE1E6 100%); width:70%" @onclick="CrearCuentan">Ingresar</Button>
+
+    </div>
+</div>
+@code {
+
+    private Cuenta nuevoCuenta = new Cuenta();
+    private string Url = "/Ubook/usuario.php";
+    private string Contrasena2 { get; set; }
+    private string rol = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "user");
+        if (temp != null)
+        {
+            rol = "user";
+        }
+        else
+        {
+            temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "admin");
+            if (temp != null)
+            {
+                rol = "admin";
+            }
+            else
+            {
+                temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "root");
+                if (temp != null)
+                {
+                    rol = "root";
+                }
+            }
+        }
+
+        if(rol == "")
+        {
+            nuevoCuenta.fecha_nacimiento = DateTime.Now;
+
+        }
+        else
+        {
+            oMenu.NavigateTo("/notaccess");
+        }
+    }
+
+
+    private async Task CrearCuentan()
+    {
+        if (nuevoCuenta.contrasena == Contrasena2)
+        {
+            var response = await HttpClient.PostAsJsonAsync<Cuenta>(Url, nuevoCuenta);
+            var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<Cuenta>>().Result;
+            if (oRespuesta.status == "success")
+            {
+                nuevoCuenta = oRespuesta.data;
+                nuevoCuenta.contrasena = "";
+                var temp = Newtonsoft.Json.JsonConvert.SerializeObject(nuevoCuenta);
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "user", temp);
+                await JSRuntime.InvokeVoidAsync("location.reload");
+                oMenu.NavigateTo("/editarcuenta/" + oRespuesta.data.ID);
+            }
+            else
+            {
+                ShowMessage(ToastType.Danger, oRespuesta.message);
+            }
+        }
+        else
+        {
+            ShowMessage(ToastType.Danger, "Las contraseñas no coinciden");
+        }
+    }
+
+    List<ToastMessage> messages = new List<ToastMessage>();
+
+    private void ShowMessage(ToastType toastType, string obser) => messages.Add(CreateToastMessage(toastType, obser));
+
+    private ToastMessage CreateToastMessage(ToastType toastType, string obser)
+    => new ToastMessage
+        {
+            Type = toastType,
+            Title = "UBook Notificación",
+            HelpText = $"{DateTime.Now}",
+            Message = obser,
+        };
+}

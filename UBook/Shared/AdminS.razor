@@ -1,0 +1,105 @@
+﻿@page "/admin"
+@inject HttpClient HttpClient
+@using System;
+@using System.Net.Http
+@using System.Net.Http.Json
+@inject NavigationManager oMenu
+@using UBook.Data
+@using Newtonsoft.Json;
+
+@inherits LayoutComponentBase
+@inject IJSRuntime JSRuntime
+
+<Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.BottomRight" />
+
+<PageTitle>Admin - Iniciar Sesion</PageTitle>
+<div class="row" style="color: #8F8E8E;font-family: 'Poppins';">
+    <div class="col-md-4"></div>
+    <div class="col-md-4" style="text-align:center">
+        <h3>Accede</h3>
+        <h6>Administrador</h6>
+        <div class="mb-3" style="text-align:left">
+            <label for="Email" class="form-label">User</label>
+            <input type="email" class="form-control" id="Email" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevoCuenta.correo">
+        </div>
+        <div class="mb-3" style="text-align:left">
+            <label for="exampleInputPassword1" class="form-label">CONTRASEÑA</label>
+            <input type="password" class="form-control" id="exampleInputPassword1" style="background: #ececec;" @bind-value="nuevoCuenta.contrasena">
+        </div>
+        <Button class="btn btn-primary" style="background-image: linear-gradient(90deg, #8C52FF 0%, #5CE1E6 100%); width:70%" @onclick="InicioSesion">Ingresar</Button>
+
+        <img src="Imagenes/ubook.png" style="width:80%" />
+    </div>
+    <div class="col-md-4"></div>
+</div>
+@code {
+    private Admin nuevoCuenta = new Admin();
+    private string Url = "/Ubook/sesionadmin.php";
+    private string rol = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "user");
+        if (temp != null)
+        {
+            rol = "user";
+        }
+        else
+        {
+            temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "admin");
+            if (temp != null)
+            {
+                rol = "admin";
+            }
+            else
+            {
+                temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "root");
+                if (temp != null)
+                {
+                    rol = "root";
+                }
+            }
+        }
+
+        if (rol == "")
+        {
+
+        }
+        else
+        {
+            oMenu.NavigateTo("/notaccess");
+        }
+    }
+
+    private async Task InicioSesion()
+    {
+        var response = await HttpClient.PostAsJsonAsync<Admin>(Url, nuevoCuenta);
+        var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<Admin>>().Result;
+        if (oRespuesta.status == "success")
+        {
+            nuevoCuenta = oRespuesta.data;
+            nuevoCuenta.contrasena = "";
+            var temp = Newtonsoft.Json.JsonConvert.SerializeObject(nuevoCuenta);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "admin", temp);
+            oMenu.NavigateTo("/");
+            await JSRuntime.InvokeVoidAsync("location.reload");
+        }
+        else
+        {
+            ShowMessage(ToastType.Danger, oRespuesta.message);
+        }
+    }
+
+    List<ToastMessage> messages = new List<ToastMessage>();
+
+    private void ShowMessage(ToastType toastType, string obser) => messages.Add(CreateToastMessage(toastType, obser));
+
+    private ToastMessage CreateToastMessage(ToastType toastType, string obser)
+    => new ToastMessage
+        {
+            Type = toastType,
+            Title = "UBook Notificación",
+            HelpText = $"{DateTime.Now}",
+            Message = obser,
+        };
+}
