@@ -1,0 +1,215 @@
+﻿@page "/direccion"
+@inject HttpClient HttpClient
+@using System.Net.Http.Json
+@using UBook.Data
+@using System.Globalization;
+@using Newtonsoft.Json;
+@inject NavigationManager oMenu
+@inject IJSRuntime JSRuntime
+@using System;
+<div class="container row">
+    <div class="col-sm-4" style="text-align:center">
+        <img src="Imagenes/ubook.png" style="width:150px" />
+
+        <h3>Lista de Direcciones</h3>
+        
+        <div class="list-group" style="text-align:left">
+            <button type="button" class="list-group-item list-group-item-action active">
+                Prueba para seleccionado
+            </button>
+            @foreach (var direccion in ListaDeDirecciones)
+            {
+                <button type="button" class="list-group-item list-group-item-action">@direccion</button>
+            }
+            <button class="claseb btn btn-primary">Agregar Nueva</button>
+        </div>
+    </div>
+
+    <div class="col-sm-8" style="text-align:center">
+        <h2>Info. Dirección</h2>
+        <div class="">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="nombreTienda" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="nombreTienda" style="background: #ececec;" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="direccion" class="form-label">Dirección</label>
+                        <input type="text" class="form-control" id="direccion" style="background: #ececec;" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="departamento" class="form-label">Departamento</label>
+                        <select class="form-control" id="departamento" @onchange="ActualizarMunicipios" style="background: #ececec;">
+                            <option value="">Seleccionar departamento</option>
+                            @foreach (var depto in Departamentos)
+                            {
+                                <option value="@depto">@depto</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="ciudad" class="form-label">Ciudad</label>
+                        <select class="form-control" id="ciudad" style="background: #ececec;">
+                            <option value="">Seleccionar ciudad</option>
+                            @foreach (var municipio in Municipios)
+                            {
+                                <option value="@municipio">@municipio</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="observaciones" class="form-label">Observaciones</label>
+                        <textarea class="form-control" id="observaciones" style="background: #ececec;"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="telefono" class="form-label">Teléfono</label>
+                        <input type="tel" class="form-control" id="telefono" style="background: #ececec;" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <button class="claseb btn btn-warning col">Editar</button>
+                <button class="claseb btn btn-danger col">Eliminar</button>
+                <button class="claseb btn btn-secondary col">Cancelar</button>
+                <button class="claseb btn btn-primary col">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .claseb {
+        margin: 5px;
+    }
+
+    .list-group-item.active {
+        background-color: #6c7582;
+    }
+</style>
+
+
+@code {
+
+    private List<string> ListaDeDirecciones = new List<string>
+    {
+        "Dirección 1",
+        "Dirección 2",
+        "Dirección 3",
+        // Agrega más direcciones según sea necesario
+    };
+    private List<string> Departamentos = new List<string>
+{
+    "Amazonas",
+    "Antioquia",
+    "Arauca",
+    "Atlántico",
+    "Bolívar",
+    "Boyacá",
+    "Caldas",
+    "Caquetá",
+    "Casanare",
+    "Cauca",
+    "Cesar",
+    "Chocó",
+    "Córdoba",
+    "Cundinamarca",
+    "Guainía",
+    "Guaviare",
+    "Huila",
+    "La Guajira",
+    "Magdalena",
+    "Meta",
+    "Nariño",
+    "Norte de Santander",
+    "Putumayo",
+    "Quindío",
+    "Risaralda",
+    "San Andrés y Providencia",
+    "Santander",
+    "Sucre",
+    "Tolima",
+    "Valle del Cauca",
+    "Vaupés",
+    "Vichada"
+};
+
+    private Dictionary<string, List<string>> MunicipiosPorDepartamento = new Dictionary<string, List<string>>
+{
+    { "Amazonas", new List<string> { "Leticia", "Puerto Nariño", "La Chorrera", "Tarapacá" } },
+    { "Antioquia", new List<string> { "Medellín", "Bello", "Envigado", "Itagüí" } },
+    { "Arauca", new List<string> { "Arauca", "Saravena", "Fortul", "Tame" } },
+    { "Atlántico", new List<string> { "Barranquilla", "Soledad", "Malambo", "Sabanagrande" } },
+    { "Bolívar", new List<string> { "Cartagena", "Bolívar", "Magangué", "Sincelejo" } },
+    { "Boyacá", new List<string> { "Tunja", "Duitama", "Sogamoso", "Chiquinquirá" } },
+    { "Caldas", new List<string> { "Manizales", "La Dorada", "Chinchiná", "Villamaría" } },
+    { "Caquetá", new List<string> { "Florencia", "San Vicente del Caguán", "Belén de los Andaquíes", "Curillo" } },
+    { "Casanare", new List<string> { "Yopal", "Aguazul", "Villanueva", "Tauramena" } },
+    { "Cauca", new List<string> { "Popayán", "Santander de Quilichao", "Guapi", "Piendamó" } },
+    { "Cesar", new List<string> { "Valledupar", "Aguachica", "Bosconia", "La Jagua de Ibirico" } },
+    { "Chocó", new List<string> { "Quibdó", "Nuquí", "Istmina", "Tadó" } },
+    { "Córdoba", new List<string> { "Montería", "Planeta Rica", "Tierralta", "Sahagún" } },
+    { "Cundinamarca", new List<string> { "Bogotá", "Soacha", "Chía", "Zipaquirá" } },
+    { "Guainía", new List<string> { "Puerto Inírida", "Barrancominas", "Mapiripana", "San Felipe" } },
+    { "Guaviare", new List<string> { "San José del Guaviare", "Calamar", "El Retorno", "Miraflores" } },
+    { "Huila", new List<string> { "Neiva", "Pitalito", "Garzón", "Campoalegre" } },
+    { "La Guajira", new List<string> { "Riohacha", "Maicao", "Fonseca", "Barrancas" } },
+    { "Magdalena", new List<string> { "Santa Marta", "Ciénaga", "Fundación", "Aracataca" } },
+    { "Meta", new List<string> { "Villavicencio", "Acacías", "Granada", "Puerto López" } },
+    { "Nariño", new List<string> { "Pasto", "Ipiales", "Tumaco", "Túquerres" } },
+    { "Norte de Santander", new List<string> { "Cúcuta", "Ocaña", "Pamplona", "Chinácota" } },
+    { "Putumayo", new List<string> { "Mocoa", "Puerto Asís", "Sibundoy", "Villagarzón" } },
+    { "Quindío", new List<string> { "Armenia", "Calarcá", "Circasia", "Montenegro" } },
+    { "Risaralda", new List<string> { "Pereira", "Dosquebradas", "La Virginia", "Santa Rosa de Cabal" } },
+    { "San Andrés y Providencia", new List<string> { "San Andrés", "Providencia", "Santa Catalina", "Bolívar" } },
+    { "Santander", new List<string> { "Bucaramanga", "Floridablanca", "Girón", "Piedecuesta" } },
+    { "Sucre", new List<string> { "Sincelejo", "Corozal", "Tolú", "San Marcos" } },
+    { "Tolima", new List<string> { "Ibagué", "Espinal", "Mariquita", "Chaparral" } },
+    { "Valle del Cauca", new List<string> { "Cali", "Buenaventura", "Palmira", "Tuluá" } },
+    { "Vaupés", new List<string> { "Mitú", "Carurú", "Taraira", "Papunaua" } },
+    { "Vichada", new List<string> { "Puerto Carreño", "La Primavera", "Santa Rosalía", "Cumaribo" } }
+};
+
+
+    private string departamentoSeleccionado = "";
+    private List<string> Municipios => MunicipiosPorDepartamento.ContainsKey(departamentoSeleccionado)
+        ? MunicipiosPorDepartamento[departamentoSeleccionado]
+        : new List<string>();
+
+    private void ActualizarMunicipios(ChangeEventArgs e)
+    {
+        departamentoSeleccionado = e.Value?.ToString() ?? "";
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "user");
+        if (temp != null)
+        {
+            
+        }
+        else
+        {
+            oMenu.NavigateTo("/notaccess");
+        }
+    }
+}

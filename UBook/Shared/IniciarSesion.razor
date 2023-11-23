@@ -34,7 +34,7 @@
 </div>
 @code {
     private Cuenta nuevoCuenta = new Cuenta();
-    private string Url = "/Ubook/sesionusuario.php";
+    private string Url = "sesionusuario.php";
     private string rol = "";
 
     protected override async Task OnInitializedAsync()
@@ -67,7 +67,7 @@
         }
         else
         {
-            oMenu.NavigateTo("/notaccess");
+            oMenu.NavigateTo("/");
         }
     }
 

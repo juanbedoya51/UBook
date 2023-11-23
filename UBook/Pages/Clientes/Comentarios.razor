@@ -1,0 +1,88 @@
+﻿@page "/comentarios"
+@inject HttpClient HttpClient
+@using System.Net.Http.Json
+@using UBook.Data
+@using System.Globalization;
+@using Newtonsoft.Json;
+@inject NavigationManager oMenu
+@inject IJSRuntime JSRuntime
+@using System;
+
+<h2>Tus Comentarios</h2>
+
+<!-- Mostrar comentarios existentes -->
+@if (comentarios.Any())
+{
+    <ul>
+        @foreach (var comentario in comentarios)
+        {
+            <li>
+                <strong>@comentario.Nombre:</strong> @comentario.Texto
+                <button class="btn btn-sm btn-danger" @onclick="() => EliminarComentario(comentario)"><i class="bi bi-trash3-fill"></i></button>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p>No tienes comentarios aún.</p>
+}
+
+<hr />
+
+<!-- Formulario para agregar nuevos comentarios -->
+<h3>Agregar Nuevo Comentario</h3>
+<form>
+    <div class="mb-3">
+        <label for="nombre" class="form-label">Nombre:</label>
+        <input type="text" class="form-control" id="nombre" @bind="nuevoComentario.Nombre" />
+    </div>
+    <div class="mb-3">
+        <label for="texto" class="form-label">Comentario:</label>
+        <textarea class="form-control" id="texto" @bind="nuevoComentario.Texto"></textarea>
+    </div>
+    <button type="button" class="btn btn-primary" @onclick="AgregarComentario">Agregar Comentario</button>
+</form>
+
+@code {
+    private List<Comentario> comentarios = new List<Comentario>
+    {
+        new Comentario { Nombre = "Usuario1", Texto = "¡Gran producto!" },
+        new Comentario { Nombre = "Usuario2", Texto = "Me encanta este servicio." }
+        // Puedes inicializar la lista con comentarios desde tu backend o base de datos
+    };
+
+    private Comentario nuevoComentario = new Comentario();
+
+    private void AgregarComentario()
+    {
+        // Lógica para agregar el nuevo comentario
+        comentarios.Add(nuevoComentario);
+        nuevoComentario = new Comentario(); // Limpiar el formulario después de agregar el comentario
+    }
+
+    private void EliminarComentario(Comentario comentario)
+    {
+        // Lógica para eliminar un comentario
+        comentarios.Remove(comentario);
+    }
+
+    public class Comentario
+    {
+        public string Nombre { get; set; }
+        public string Texto { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "user");
+        if (temp != null)
+        {
+           
+        }
+        else
+        {
+            oMenu.NavigateTo("/notaccess");
+        }
+    }
+}

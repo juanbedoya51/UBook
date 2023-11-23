@@ -1,0 +1,112 @@
+@import '_content/Blazor.Bootstrap/Blazor.Bootstrap.bundle.scp.css';
+@import '_content/Microsoft.AspNetCore.Components.QuickGrid/Microsoft.AspNetCore.Components.QuickGrid.bundle.scp.css';
+
+/* /Shared/MainLayout.razor.rz.scp.css */
+.page[b-l4do3kr5tq] {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+main[b-l4do3kr5tq] {
+    flex: 1;
+}
+
+.sidebar[b-l4do3kr5tq] {
+    background-image: linear-gradient(90deg, rgb(0, 0, 0) 0%, #3533CD 100%);
+    align-content: center;
+}
+
+@media (min-width: 60041px) {
+    .page[b-l4do3kr5tq] {
+        flex-direction: row;
+    }
+
+    .sidebar[b-l4do3kr5tq] {
+        width: 250px;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+    }
+
+}
+/* /Shared/NavMenu.razor.rz.scp.css */
+.navbar-toggler[b-31zk10gqzp] {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.top-row[b-31zk10gqzp] {
+    height: 3.5rem;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.navbar-brand[b-31zk10gqzp] {
+    font-size: 1.1rem;
+}
+
+.oi[b-31zk10gqzp] {
+    width: 2rem;
+    font-size: 1.1rem;
+    vertical-align: text-top;
+    top: -2px;
+}
+
+.nav-item[b-31zk10gqzp] {
+    font-size: 0.9rem;
+    padding-bottom: 0.5rem;
+}
+
+    .nav-item:first-of-type[b-31zk10gqzp] {
+        padding-top: 1rem;
+    }
+
+    .nav-item:last-of-type[b-31zk10gqzp] {
+        padding-bottom: 1rem;
+    }
+
+    .nav-item[b-31zk10gqzp]  a {
+        color: #d7d7d7;
+        border-radius: 4px;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        line-height: 3rem;
+    }
+
+.nav-item[b-31zk10gqzp]  a.active {
+    background-color: rgba(255,255,255,0.25);
+    color: white;
+}
+
+.nav-item[b-31zk10gqzp]  a:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: white;
+}
+
+.ocultar[b-31zk10gqzp]{
+    display: flex;
+    align-items: center;
+}
+
+@media (min-width: 60041px) {
+    .navbar-toggler[b-31zk10gqzp] {
+        display: none;
+    }
+
+    .collapse[b-31zk10gqzp] {
+        /* Never collapse the sidebar for wide screens */
+        display: block;
+    }
+    
+    .nav-scrollable[b-31zk10gqzp] {
+        /* Allow sidebar to scroll for tall menus */
+        height: calc(100vh - 3.5rem);
+        overflow-y: auto;
+    }
+}
+
+@media(max-width: 600px){
+    .ocultar[b-31zk10gqzp]{
+        display: none;
+    }
+}

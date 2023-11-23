@@ -1,0 +1,114 @@
+﻿@page "/devolucion"
+@inject HttpClient HttpClient
+@using System.Net.Http.Json
+@using UBook.Data
+@using System.Globalization;
+@using Newtonsoft.Json;
+@inject NavigationManager oMenu
+@inject IJSRuntime JSRuntime
+@using System;
+
+<div class="row" style="color: #8F8E8E; font-family: 'Poppins';">
+    <div class="col-md-6" style="text-align: center">
+        <img src="@($"data:image/jpeg;base64,{nuevoLibro.imagen}")" alt="Producto" class="img-fluid" style="width:125px" />
+    </div>
+    <div class="col-md-4" style="text-align: center">
+        <h3>Info. Libro a Devolver</h3>
+
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Nombre:</strong> @nuevoLibro.nombre</p>
+                <p><strong>Autor:</strong> @nuevoLibro.autor</p>
+                <p><strong>Editorial:</strong> @nuevoLibro.editorial</p>
+                <!-- Agrega más detalles del libro según sea necesario -->
+            </div>
+            <div class="col-md-6">
+                <p><strong>Número de Páginas:</strong> @nuevoLibro.nopagina</p>
+                <p><strong>ISSN:</strong> @nuevoLibro.issn</p>
+                <!-- Agrega más detalles del libro según sea necesario -->
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <!-- Seleccionar dirección de devolución -->
+            <h4 class="col-8">Seleccionar Dirección de Devolución</h4>
+            <!-- Opción para devolver en tienda -->
+            <div class="form-check col-4">
+                <input class="form-check-input" type="checkbox" @bind="devolverEnTienda" />
+                <label class="form-check-label"><i class="bi bi-shop"></i>Devolver en tienda</label>
+            </div>
+            <select class="form-select mb-3">
+                <option value="">Seleccionar dirección</option>
+                @* @foreach (var direccion in direcciones)
+                {
+                    <option value="@direccion">@direccion.Nombre - @direccion.Direccion</option>
+                } *@
+            </select>
+        </div>
+
+        <div class="col-md-6">
+            <!-- Seleccionar motivo de devolución -->
+            <h4>Seleccionar Motivo de Devolución</h4>
+            <select class="form-select mb-3" @bind="motivoDevolucion">
+                <option value="">Seleccionar motivo</option>
+                <option value="Producto defectuoso">Producto defectuoso</option>
+                <option value="No era lo que esperaba">No era lo que esperaba</option>
+                <option value="Otro">Otro</option>
+            </select>
+        </div>
+    </div>
+    <div class="row" style="text-align: center">
+        <div class="col" style="text-align: center">
+            <div class="row btn btn-outline-danger" @onclick="CancelarDevolucion">
+                <i class="bi bi-x-circle-fill" style="font-size:30px;"></i>
+                <h5>Cancelar</h5>
+            </div>
+        </div>
+        <div class="col" style="text-align: center">
+            <div class="row btn btn-outline-primary" @onclick="EnviarDevolucion">
+                <i class="bi bi-check-circle-fill" style="font-size:30px;"></i>
+                <h5>Enviar Devolución</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Libro nuevoLibro = new Libro();
+    private string motivoDevolucion = "";
+    private bool devolverEnTienda = false;
+
+    // ... (resto del código)
+
+    private void CancelarDevolucion()
+    {
+        // Lógica para cancelar la devolución (puedes redirigir a otra página si es necesario)
+        oMenu.NavigateTo("/");
+    }
+
+    private void EnviarDevolucion()
+    {
+        // Lógica para enviar la solicitud de devolución
+        // Puedes implementar esta lógica según tus requisitos
+        ShowMessage(ToastType.Info, "Solicitud de devolución enviada con éxito");
+    }
+
+    List<ToastMessage> messages = new List<ToastMessage>();
+
+    private void ShowMessage(ToastType toastType, string obser) => messages.Add(CreateToastMessage(toastType, obser));
+
+    private ToastMessage CreateToastMessage(ToastType toastType, string obser)
+    => new ToastMessage
+        {
+            Type = toastType,
+            Title = "UBook Notificación",
+            HelpText = $"{DateTime.Now}",
+            Message = obser,
+        };
+}

@@ -1,0 +1,135 @@
+﻿@page "/eliminarlibro"
+@inject HttpClient HttpClient
+@using System;
+@using System.Net.Http
+@using System.Net.Http.Json
+@using UBook.Data
+@inject NavigationManager oMenu
+@inject IJSRuntime JSRuntime
+
+@if (carga)
+{
+    <div class="d-flex justify-content-center" style="margin-top:200px">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <PageTitle>Eliminar Libro</PageTitle>
+    <Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.BottomRight" />
+
+    <div class="row" style="color: #8F8E8E;font-family: 'Poppins';">
+        <div class="col-md-6" style="text-align:center">
+            @if (!string.IsNullOrEmpty(imagenBase64))
+            {
+                <img src="@($"data:image/jpeg;base64,{imagenBase64}")" style="width:400px" />
+            }
+            else
+            {
+                <img src="Imagenes/ubook.png" style="width:400px" />
+            }
+        </div>
+        <div class="col-md-4" style="text-align:center">
+            <h3>Eliminar Libro</h3>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="exampleInputTD" class="form-label">Ingrese el código del libro</label>
+                        <input type="number" class="form-control" id="exampleInputTD" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="Id">
+                    </div>
+                    <div class="mb-3" style="text-align:left">
+                        <label for="exampleInputDoc" class="form-label">Nombre del Libro</label>
+                        <input type="text" class="form-control" id="exampleInputDoc" aria-describedby="emailHelp" style="background: #ececec;" disabled @bind-value="nuevoLibro.nombre">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="exampleInputDoc" class="form-label col-12">-------- </label>
+                        <Button class="btn btn-primary col" @onclick="BuscarLibro">Buscar</Button>
+                    </div>
+                    <div class="mb-3" style="text-align:left">
+                        <label for="exampleInputEmail1" class="form-label">Autor del Libro</label>
+                        <input type="email" class="form-control col-2" id="exampleInputEmail1" aria-describedby="emailHelp" style="background: #ececec;" disabled @bind-value="nuevoLibro.autor">
+                    </div>
+                </div>
+            </div>
+            @if (nuevoLibro.nombre != null && nuevoLibro.nombre != "")
+            {
+                <Button class="btn btn-primary" style="background-color: #ff0000; width:70%" @onclick="BorrarLibro">ELIMINAR</Button>
+            }
+
+        </div>
+    </div>
+}
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Libro nuevoLibro = new Libro();
+    private string mensaje = "";
+    private string Url = "libros.php";
+
+    private string imagenBase64;
+    private bool carga { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        carga = true;
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "admin");
+        if (temp != null)
+        {
+            carga = false;
+        }
+        else
+        {
+            oMenu.NavigateTo("/notaccess");
+        }
+    }
+
+    protected async Task BuscarLibro()
+    {
+        if (Id != 0)
+        {
+            var oRespuesta = await HttpClient.GetFromJsonAsync<Respuesta<Libro>>(Url + "?id=" + Id);
+            if (oRespuesta.status == "success")
+            {
+                nuevoLibro = oRespuesta.data;
+                imagenBase64 = nuevoLibro.imagen;
+            }
+        }
+    }
+
+    private async Task BorrarLibro()
+    {
+        if (nuevoLibro.vendido == 0)
+        {
+            var response = await HttpClient.DeleteFromJsonAsync<Respuesta<Libro>>(Url + "?id=" + nuevoLibro.ID);
+            if (response.status == "success")
+            {
+                ShowMessage(ToastType.Success, response.message);
+                nuevoLibro = new Libro();
+                imagenBase64 = "";
+            }
+            else
+            {
+                ShowMessage(ToastType.Danger, response.message);
+            }
+        }
+    }
+
+    List<ToastMessage> messages = new List<ToastMessage>();
+
+    private void ShowMessage(ToastType toastType, string obser) => messages.Add(CreateToastMessage(toastType, obser));
+
+    private ToastMessage CreateToastMessage(ToastType toastType, string obser)
+    => new ToastMessage
+        {
+            Type = toastType,
+            Title = "UBook Notificación",
+            HelpText = $"{DateTime.Now}",
+            Message = obser,
+        };
+}

@@ -1,0 +1,99 @@
+﻿@page "/editarcuenta"
+@inject HttpClient HttpClient
+@using System;
+@using System.Net.Http
+@using System.Net.Http.Json
+@using UBook.Data
+@inject NavigationManager oMenu
+@inject IJSRuntime JSRuntime
+
+@if (carga)
+{
+    <div class="d-flex justify-content-center" style="margin-top:200px">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <PageTitle>Editar cuenta</PageTitle>
+    <Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.BottomRight" />
+
+    <div class="row" style="color: #8F8E8E;font-family: 'Poppins';">
+        <div class="col-md-6" style="text-align:center">
+            <img src="Imagenes/ubook.png" style="width:400px" />
+        </div>
+        <div class="col-md-4" style="text-align:center">
+            <h3>Editar la cuenta</h3>
+
+            <div class="mb-3" style="text-align:left">
+                <label for="exampleInputNombre" class="form-label">Nombre</label>
+                <input type="email" class="form-control" id="exampleInputNombre" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevoCuenta.nombre">
+            </div>
+            <div class="mb-3" style="text-align:left">
+                <label for="exampleInputEmail1" class="form-label">Correo electrónico</label>
+                <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevoCuenta.correo">
+            </div>
+            <div class="mb-3" style="text-align:left">
+                <label for="exampleInputFN" class="form-label">Fecha de nacimiento</label>
+                <input type="date" class="form-control" id="exampleInputFN" style="background: #ececec;" @bind-value="nuevoCuenta.fecha_nacimiento">
+            </div>
+            <Button class="btn btn-primary" style="background-color: #f17502; width:70%" @onclick="ModificarCuenta">Ingresar</Button>
+
+        </div>
+    </div>
+}
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Cuenta nuevoCuenta = new Cuenta();
+    private string mensaje = "";
+    private string Url = "usuario.php";
+    private bool carga { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        carga = true;
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "user");
+        if (temp != null)
+        {
+            nuevoCuenta = Newtonsoft.Json.JsonConvert.DeserializeObject<Cuenta>(temp);
+            carga = false;
+        }
+        else
+        {
+            oMenu.NavigateTo("/notaccess");
+        }
+
+    }
+
+    private async Task ModificarCuenta()
+    {
+        var response = await HttpClient.PutAsJsonAsync<Cuenta>(Url, nuevoCuenta);
+        var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<Cuenta>>().Result;
+        if (oRespuesta.status == "success")
+        {
+            ShowMessage(ToastType.Success, oRespuesta.message);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "user", nuevoCuenta);
+        }
+        else
+        {
+            ShowMessage(ToastType.Danger, oRespuesta.message);
+        }
+    }
+
+    List<ToastMessage> messages = new List<ToastMessage>();
+
+    private void ShowMessage(ToastType toastType, string obser) => messages.Add(CreateToastMessage(toastType, obser));
+
+    private ToastMessage CreateToastMessage(ToastType toastType, string obser)
+    => new ToastMessage
+        {
+            Type = toastType,
+            Title = "UBook Notificación",
+            HelpText = $"{DateTime.Now}",
+            Message = obser,
+        };
+}

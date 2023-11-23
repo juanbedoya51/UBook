@@ -1,0 +1,62 @@
+﻿@page "/suscribirse"
+@inject HttpClient HttpClient
+@using System.Net.Http.Json
+@using UBook.Data
+@using System.Globalization;
+@using Newtonsoft.Json;
+@inject NavigationManager oMenu
+@inject IJSRuntime JSRuntime
+@using System;
+
+<div class="container" style="color: #8F8E8E;font-family: 'Poppins';">
+    <img src="Imagenes/ubook.png" alt="Ubook Logo" style="width: 150px;" />
+    <h2>Suscripción a Noticias</h2>
+
+    <form>
+        <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="nombre" placeholder="Ingrese su nombre" style="background: #ececec;" />
+        </div>
+
+        <div class="mb-3">
+            <label for="correo" class="form-label">Correo Electrónico</label>
+            <input type="email" class="form-control" id="correo" placeholder="Ingrese su correo electrónico" style="background: #ececec;" />
+        </div>
+        <div class="mb-3" style="text-align:center">
+            <button type="button" class="btn btn-primary" @onclick="Suscribirse">Suscribirse</button>
+        </div>
+        
+    </form>
+</div>
+
+<style>
+  
+
+    img {
+        margin-bottom: 20px;
+    }
+
+    form {
+        width: 300px;
+    }
+
+    button {
+        margin-top: 10px;
+    }
+</style>
+
+@code {
+    private void Suscribirse()
+    {
+        // Lógica para procesar la suscripción
+        // Puedes implementar esta lógica según tus requisitos
+        MostrarMensaje("¡Gracias por suscribirse a nuestras noticias!");
+    }
+
+    private void MostrarMensaje(string mensaje)
+    {
+        // Puedes implementar la lógica para mostrar mensajes de éxito o error aquí
+        // En este ejemplo, simplemente imprimo el mensaje en la consola
+        Console.WriteLine(mensaje);
+    }
+}

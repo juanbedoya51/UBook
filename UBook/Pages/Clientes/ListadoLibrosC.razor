@@ -1,0 +1,141 @@
+﻿@page "/librolistado"
+@page "/librolistado/{Param}"
+@using System;
+@using System.Net.Http
+@using System.Net.Http.Json
+@using UBook.Data
+@using System.Globalization;
+@using Newtonsoft.Json;
+@inject NavigationManager oMenu
+@inject IJSRuntime JSRuntime
+@inject HttpClient HttpClient
+@using Microsoft.AspNetCore.Components.QuickGrid
+
+@if (carga)
+{
+    <div class="d-flex justify-content-center" style="margin-top:200px">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <PageTitle>Info Libro</PageTitle>
+    <Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.BottomRight" />
+    
+    <div class="row">
+
+        @foreach (var lib in filtroLibros)
+        {
+            <div class="col-lg-6">
+                <div class="row" style="background-color: #EAEAEA; margin: 5px; max-width: 680px; border: 20px; padding: 10px; align-items: center; align-content: center; text-align: center;}">
+                    <div class="col">
+                        <img src="@($"data:image/jpeg;base64,{lib.imagen}")" alt="Producto" class="img-fluid" style="min-width:100px" />
+                    </div>
+
+                    <div class="col">
+                        <div class="row">
+                            <div class="col">
+                                <h3>@lib.nombre</h3>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <p>
+                                    @lib.precio.ToString("C0",CultureInfo.CreateSpecificCulture("en-US"))
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <div class="row mb-3 btn">
+                            <i class="bi bi-cart3" style="font-size:30px; color:green"></i>
+                            <h5>Comprar</h5>
+                        </div>
+                        <div class="row btn mb-3">
+                            <i class="bi bi-bag-check" style="font-size:30px; color: #DEBD29"></i>
+                            <h5>Reservar</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+@code {
+    [Parameter]
+    public string Param { get; set; }
+
+    public IQueryable<Libro> maestroLibros { get; set; } = null;
+    private string Url = "libros.php";
+    private bool carga { get; set; } = true;
+    PaginationState paginacion = new PaginationState { ItemsPerPage = 10 };
+    QuickGrid<Libro> refGrid;
+    DateTime min = new DateTime(2000, 1, 1);
+    DateTime minMedals = new DateTime(2000, 1, 1);
+    DateTime maxMedals = DateTime.Now;
+    string rol = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "admin");
+        var temp2 = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "root");
+        if (temp != null || temp2 != null)
+        {
+            oMenu.NavigateTo("/notaccess");
+        }
+        else
+        {
+            var oRespuesta = await HttpClient.GetFromJsonAsync<Respuesta<List<Libro>>>(Url);
+            maestroLibros = oRespuesta.data.AsQueryable();
+
+            carga = false;
+        }
+    }
+
+    IQueryable<Libro> filtroLibros
+    {
+        get
+        {
+            var result = maestroLibros?.Where(c => c.fecha <= maxMedals);
+
+            if (!string.IsNullOrEmpty(Param))
+            {
+                result = result.Where(c =>
+                    (c.nombre != null && c.nombre.ToLower().Contains(Param.ToLower()))
+                    ||
+                    (c.autor != null && c.autor.ToLower().Contains(Param.ToLower()))
+                    ||
+                    (c.editorial != null && c.editorial.ToLower().Contains(Param.ToLower()))
+                    ||
+                    (c.genero != null && c.genero.ToLower().Contains(Param.ToLower()))
+                    ||
+                    (c.idioma != null && c.idioma.ToLower().Contains(Param.ToLower()))
+                    );
+            }
+
+
+            if (minMedals > min)
+            {
+                result = result.Where(c => c.fecha >= minMedals);
+            }
+
+            return result;
+        }
+    }
+
+    List<ToastMessage> messages = new List<ToastMessage>();
+
+    private void ShowMessage(ToastType toastType, string obser) => messages.Add(CreateToastMessage(toastType, obser));
+
+    private ToastMessage CreateToastMessage(ToastType toastType, string obser)
+    => new ToastMessage
+        {
+            Type = toastType,
+            Title = "UBook Notificación",
+            HelpText = $"{DateTime.Now}",
+            Message = obser,
+        };
+}

@@ -1,0 +1,77 @@
+﻿@page "/infoventa/{Id:int}"
+@inject HttpClient HttpClient
+@using System.Net.Http.Json
+@using UBook.Data
+@using System.Globalization;
+@using Newtonsoft.Json;
+@inject NavigationManager oMenu
+@inject IJSRuntime JSRuntime
+@using System;
+
+<PageTitle>Info Venta</PageTitle>
+<Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.BottomRight" />
+
+<div class="row" style="color: #8F8E8E;font-family: 'Poppins';">
+    <div class="col-md-6" style="text-align:center">
+        <!-- Mostrar la información del libro -->
+        <h3>Información del Libro</h3>
+        <img src="@($"data:image/jpeg;base64,{libro.imagen}")" alt="Producto" class="img-fluid" style="width:125px" />
+        <p><strong>Nombre:</strong> @libro.nombre</p>
+        <p><strong>Autor:</strong> @libro.autor</p>
+        <p><strong>Precio:</strong> @libro.precio.ToString("C0",CultureInfo.CreateSpecificCulture("en-US"))</p>
+        <!-- Agrega más propiedades del libro según tus necesidades -->
+
+    </div>
+    <div class="col-md-6" style="text-align:center"> 
+        <!-- Mostrar la información del cliente y la venta -->
+        <h3>Información de la Venta</h3>
+        <p><strong>Fecha de Compra:</strong> @venta.FechaCompra.ToString("dd/MM/yyyy HH:mm:ss")</p>
+        <p><strong>Cliente:</strong> @cliente.nombre</p>
+        <p><strong>Teléfono:</strong> @cliente.telefono</p>
+        <p><strong>Dirección de Envío:</strong> @cliente.DireccionEnvio</p>
+        <p><strong>Correo:</strong> @cliente.correo</p>
+        <!-- Agrega más propiedades del cliente según tus necesidades -->
+
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Venta venta = new Venta();
+    private Cuenta cliente = new Cuenta();
+    private Libro libro = new Libro();
+    private string mensaje = "";
+    private string Url = "ventas.php";
+    private bool carga { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "admin");
+        if (temp != null)
+        {
+            cliente = venta.Cliente;
+            libro = venta.Libro;
+
+            carga = false;
+        }
+        else
+        {
+            oMenu.NavigateTo("/notaccess");
+        }
+    }
+
+    List<ToastMessage> messages = new List<ToastMessage>();
+
+    private void ShowMessage(ToastType toastType, string obser) => messages.Add(CreateToastMessage(toastType, obser));
+
+    private ToastMessage CreateToastMessage(ToastType toastType, string obser)
+    => new ToastMessage
+        {
+            Type = toastType,
+            Title = "UBook Notificación",
+            HelpText = $"{DateTime.Now}",
+            Message = obser,
+        };
+}

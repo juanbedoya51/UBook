@@ -1,0 +1,76 @@
+﻿@page "/tienda"
+@inject HttpClient HttpClient
+@using System.Net.Http.Json
+@using UBook.Data
+@using System.Globalization;
+@using Newtonsoft.Json;
+@inject NavigationManager oMenu
+@inject IJSRuntime JSRuntime
+@using System;
+
+<div class="container">
+    <img src="Imagenes/ubook.png" style="width:150px" />
+    <h2>Info. Tienda</h2>
+    <div class="col-lg-5">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="mb-3" style="text-align:left">
+                    <label for="nombre" class="form-label">Nombre de la Tienda</label>
+                    <input type="text" class="form-control" aria-describedby="emailHelp" style="background: #ececec;">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="mb-3" style="text-align:left">
+                    <label for="nombre" class="form-label">Dirección</label>
+                    <InputTextArea class="form-control form-control-sm" style="background: #ececec;" @bind-Value="temp"></InputTextArea>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3" style="text-align:left">
+                    <label for="horaInicio" class="form-label">Hora de apertura:</label>
+                    <input type="time" id="horaInicio" name="horaInicio" class="form-control" aria-describedby="emailHelp" style="background: #ececec;" />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-6" style="text-align:left">
+                    <label for="horaFin" class="form-label">Hora de cierre:</label>
+                    <input type="time" id="horaFin" name="horaFin" class="form-control" aria-describedby="emailHelp" style="background: #ececec;" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <button class="claseb btn btn-warning col">Editar</button>
+            <button class="claseb btn btn-danger col">Eliminar</button>
+            <button class="claseb btn btn-secondary col">Cancelar</button>
+            <button class="claseb btn btn-primary col">Guardar</button>
+        </div>
+    </div>
+
+</div>
+<style>
+   
+    .claseb {
+        margin: 5px;
+    }
+</style>
+
+@code {
+    string temp;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "admin");
+        if (temp != null)
+        {
+
+        }
+        else
+        {
+            oMenu.NavigateTo("/notaccess");
+        }
+    }
+}

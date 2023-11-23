@@ -9,6 +9,8 @@
         public string contrasena { get; set; }
         public string pregunta { get; set; }
         public string respuesta { get; set;}
+        public string DireccionEnvio { get; set; }
+        public string telefono { get; set; }
 
     }
 }
