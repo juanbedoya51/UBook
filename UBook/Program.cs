@@ -13,7 +13,7 @@ builder.Services.AddBlazorBootstrap(); // Add this line
 
 builder.Services.AddSingleton(new HttpClient
 {
-    ////BaseAddress = new Uri("http://localhost/Ubook/")
-    BaseAddress = new Uri("https://ubook-php-api.000webhostapp.com/Ubook/")
+    //BaseAddress = new Uri("http://localhost/Ubook/")
+    BaseAddress = new Uri("https://juanbedoya51-001-site1.itempurl.com/")
 });
 await builder.Build().RunAsync();

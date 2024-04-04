@@ -104,7 +104,7 @@ else
 
     private async Task BorrarLibro()
     {
-        if (nuevoLibro.vendido == 0)
+        if (nuevoLibro.estado == "Disponible")
         {
             var response = await HttpClient.DeleteFromJsonAsync<Respuesta<Libro>>(Url + "?id=" + nuevoLibro.ID);
             if (response.status == "success")

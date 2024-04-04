@@ -52,7 +52,19 @@ else
                     <div class="col">
                         <div class="row">
                             <div class="col">
-                                <h3>@lib.nombre</h3>
+                                <h3>@lib.nombre_libro</h3>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                @if (lib.nuevo == 1)
+                                {
+                                    <p>*Nuevo*</p>
+                                }
+                                else
+                                {
+                                    <p>*Usado*</p>
+                                }
                             </div>
                         </div>
                         <div class="row">
@@ -65,43 +77,62 @@ else
                     </div>
                     <div class="col">
                         <div class="row">
-                            <i class="bi bi-bus-front" style="font-size:40px;"></i>
-                            <h5>En camino</h5>
+                            @if(lib.estado_envio == "cancelado")
+                            {
+                                <i class="bi bi-x-octagon-fill" style="font-size:40px;"></i>
+                            }
+                            else if (lib.estado_envio == "enviado")
+                            {
+                                <i class="bi bi-bus-front" style="font-size:40px;"></i>
+                            }
+                            else if (lib.estado_envio == "preparacion")
+                            {
+                                <i class="bi bi-box-seam-fill" style="font-size:40px;"></i>
+                            }
+                            <h5>@lib.estado_envio</h5>
                         </div>
                     </div>
                     <!-- Columna 3 con dos filas (botón comprar y botón reservar) -->
                     <div class="col">
-                        <div class="row btn">
+                        <div class="row btn" @onclick="@((args) => Cancelar(lib.id_historico))">
                             <i class="bi bi-bag-dash-fill" style="font-size:40px; color:orange"></i>
-                            <h5>Devolver</h5>
+                            <h5>Cancelar</h5>
                         </div>
                     </div>
                 </div>
             </div>
         }
     </div>
-
 }
 @code {
-    public IQueryable<Libro> maestroLibros { get; set; } = null;
-    private string Url = "libros.php";
+    public IQueryable<ComprarR> maestroCompra { get; set; } = null;
+    private string Url = "miscompras.php";
     private bool carga { get; set; } = true;
     PaginationState paginacion = new PaginationState { ItemsPerPage = 10 };
-    QuickGrid<Libro> refGrid;
+    QuickGrid<ComprarR> refGrid;
     string vcNombre = string.Empty;
-    DateTime min = new DateTime(2000, 1, 1);
-    DateTime minMedals = new DateTime(2000, 1, 1);
-    DateTime maxMedals = DateTime.Now;
+    DateOnly min = new DateOnly(2000, 1, 1);
+    DateOnly minMedals = new DateOnly(2000, 1, 1);
+    DateOnly maxMedals = DateOnly.FromDateTime(DateTime.Now);
     string rol = string.Empty;
+    public Cuenta usuario = new Cuenta();
 
     protected override async Task OnInitializedAsync()
     {
         var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "user");
         if (temp != null)
         {
-            var oRespuesta = await HttpClient.GetFromJsonAsync<Respuesta<List<Libro>>>(Url);
-            maestroLibros = oRespuesta.data.AsQueryable();
+            usuario = Newtonsoft.Json.JsonConvert.DeserializeObject<Cuenta>(temp);
+            var oRespuesta = await HttpClient.GetFromJsonAsync<Respuesta<List<ComprarR>>>(Url + "?id_usuario=" + usuario.ID);
+            if (oRespuesta.data != null)
+            {
+                maestroCompra = oRespuesta.data.AsQueryable();
 
+            }
+            else
+            {
+                maestroCompra = new List<ComprarR>().AsQueryable();
+            }
             carga = false;
         }
         else
@@ -110,35 +141,53 @@ else
         }
     }
 
-    IQueryable<Libro> filtroLibros
+    IQueryable<ComprarR> filtroLibros
     {
         get
         {
-            var result = maestroLibros?.Where(c => c.fecha <= maxMedals);
+            var result = maestroCompra?.Where(c => c.fecha_compra <= maxMedals);
 
             if (!string.IsNullOrEmpty(vcNombre))
             {
                 result = result.Where(c =>
-                    (c.nombre != null && c.nombre.ToLower().Contains(vcNombre.ToLower()))
+                    (c.estado_envio != null && c.estado_envio.ToLower().Contains(vcNombre.ToLower()))
                     ||
-                    (c.autor != null && c.autor.ToLower().Contains(vcNombre.ToLower()))
+                    (c.nombre_libro != null && c.nombre_libro.ToLower().Contains(vcNombre.ToLower()))
                     ||
-                    (c.editorial != null && c.editorial.ToLower().Contains(vcNombre.ToLower()))
-                    ||
-                    (c.genero != null && c.genero.ToLower().Contains(vcNombre.ToLower()))
-                    ||
-                    (c.idioma != null && c.idioma.ToLower().Contains(vcNombre.ToLower()))
+                    (c.direccion != null && c.direccion.ToLower().Contains(vcNombre.ToLower()))
                     );
             }
 
 
             if (minMedals > min)
             {
-                result = result.Where(c => c.fecha >= minMedals);
+                result = result.Where(c => c.fecha_compra >= minMedals);
             }
 
             return result;
         }
+    }
+
+    public class model
+    {
+        public int id_historico { get; set; }
+    }
+
+    private async Task Cancelar(int id)
+    {
+        var cuerpo = new model();
+        cuerpo.id_historico = id;
+        var response = await HttpClient.PostAsJsonAsync<model>("cancelarcompra.php", cuerpo);
+        var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<ComprarR>>().Result;
+        if (oRespuesta.status == "success")
+        {
+            ShowMessage(ToastType.Success, "Compra cancelada con éxito");
+        }
+        else
+        {
+            ShowMessage(ToastType.Danger, oRespuesta.message);
+        }
+
     }
 
     List<ToastMessage> messages = new List<ToastMessage>();

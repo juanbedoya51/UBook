@@ -73,7 +73,7 @@ else
                         <select class="form-select" aria-label="Default select example" id="idioma" style="background: #ececec;" @bind="@nuevoLibro.idioma">
                             <option selected disabled>Seleccionar</option>
                             <option value="Español">Español</option>
-                            <option value="Inglés">Inglés</option>
+                            <option value="Ingles">Inglés</option>
                         </select>
                     </div>
                 </div>
@@ -95,9 +95,18 @@ else
                         <CurrencyInput TValue="decimal" @bind-Value="@nuevoLibro.precio" Placeholder="Enter amount" class="form-control" id="precio" style="background: #ececec;"/>
                     </div>
                     <div class="mb-3" style="text-align:left">
-                        <label for="imagenInput" class="form-label">Portada</label>
-                        <InputFile id="imagenInput" OnChange="HandleFileChange" class="form-control" />
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" aria-label="Default select example" id="estado" style="background: #ececec;" @bind="@nuevoLibro.nuevo">
+                            <option selected disabled value="10">Seleccionar</option>
+                            <option value="1">Nuevo</option>
+                            <option value="0">Usado</option>
+                        </select>
                     </div>
+                    
+                </div>
+                <div class="mb-3" style="text-align:left">
+                    <label for="imagenInput" class="form-label">Portada</label>
+                    <InputFile id="imagenInput" OnChange="HandleFileChange" class="form-control" />
                 </div>
             </div>
             @if (Id == 0)
@@ -106,12 +115,20 @@ else
             }
             else
             {
-                <Button class="btn btn-primary" style="background-color: #f17502; width:70%" @onclick="@ModificarLibro">MODIFICAR</Button>
+                if(nuevoLibro.estado == "Disponible")
+                {
+                    <Button class="btn btn-primary" style="background-color: #f17502; width:70%" @onclick="@ModificarLibro">MODIFICAR</Button>
+                }
+                else
+                {
+                    <p style="color:red">El libro no puede ser modificado porque se encuentra vendido o reservado</p>
+                }
             }
 
         </div>
     </div>
 }
+@* @Newtonsoft.Json.JsonConvert.SerializeObject(nuevoLibro) *@
 @code {
     [Parameter]
     public int Id { get; set; }
@@ -125,7 +142,7 @@ else
     {
         carga = true;
         var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "admin");
-        if (temp != null)
+        if (true)
         {
             if (Id != 0)
             {
@@ -139,8 +156,9 @@ else
             else
             {
 
-                nuevoLibro.fecha = DateTime.Now;
-                nuevoLibro.vendido = 0;
+                nuevoLibro.fecha = DateOnly.FromDateTime(DateTime.Now);
+                nuevoLibro.estado = "Disponible";
+                nuevoLibro.nuevo = 10;
             }
             carga = false;
         }
@@ -153,6 +171,7 @@ else
     private async Task CrearLibro()
     {
         var response = await HttpClient.PostAsJsonAsync<Libro>(Url, nuevoLibro);
+        Console.WriteLine(response);
         var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<Libro>>().Result;
         if (oRespuesta.status == "success")
         {

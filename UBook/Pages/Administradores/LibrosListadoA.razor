@@ -39,19 +39,12 @@ else
         <QuickGrid Items="@filtroLibros" @ref="refGrid" Pagination="@paginacion" ResizableColumns="true">
             @if (rol == "admin")
             {
-                <TemplateColumn Title="Acciones">
+                <TemplateColumn Title="Codigo libro">
                     <div class="flex align-items-center">
-                        <a class="btn btn-sm btn-outline-dark btn-sm" href="/reglibro/@context.ID">Ver/Editar</a>
+                        <a class="btn btn-sm btn-outline-dark btn-sm" href="/reglibro/@context.ID">@context.ID</a>
                     </div>
                 </TemplateColumn>
-                <PropertyColumn Property="@(p => p.ID)" Title="Código" Sortable="true" />
             }
-            <TemplateColumn Title="Portada">
-                @if (context.imagen != "")
-                {
-                    <img src="@($"data:image/jpeg;base64,{context.imagen}")" style="width:50px" />
-                }
-            </TemplateColumn>
             <PropertyColumn Property="@(p => p.nombre)" Title="Nombre" Sortable="true" />
             <PropertyColumn Property="@(p => p.autor)" Title="Autor" Sortable="true" />
             <PropertyColumn Property="@(p => p.editorial)" Title="Editorial" Sortable="true" />
@@ -64,6 +57,7 @@ else
                 </ColumnOptions>
             </PropertyColumn>
             <PropertyColumn Property="@(p => p.precio.ToString("C0",CultureInfo.CreateSpecificCulture("en-US")))" Title="Precio" Sortable="true" />
+            <PropertyColumn Property="@(p => p.estado)" Title="Estado" Sortable="true" />
         </QuickGrid>
     </div>
 
@@ -76,9 +70,9 @@ else
     PaginationState paginacion = new PaginationState { ItemsPerPage = 10 };
     QuickGrid<Libro> refGrid;
     string vcNombre = string.Empty;
-    DateTime min = new DateTime(2000, 1, 1);
-    DateTime minMedals = new DateTime(2000, 1, 1);
-    DateTime maxMedals = DateTime.Now;
+    DateOnly min = new DateOnly(2000, 1, 1);
+    DateOnly minMedals = new DateOnly(2000, 1, 1);
+    DateOnly maxMedals = DateOnly.FromDateTime(DateTime.Now);
     string rol = string.Empty;
 
     protected override async Task OnInitializedAsync()

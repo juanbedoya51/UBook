@@ -2,87 +2,161 @@
 @inject HttpClient HttpClient
 @using System.Net.Http.Json
 @using UBook.Data
-@using System.Globalization;
-@using Newtonsoft.Json;
 @inject NavigationManager oMenu
 @inject IJSRuntime JSRuntime
 @using System;
 
-<h2>Tus Comentarios</h2>
+<Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.BottomRight" />
 
-<!-- Mostrar comentarios existentes -->
-@if (comentarios.Any())
-{
-    <ul>
-        @foreach (var comentario in comentarios)
-        {
-            <li>
-                <strong>@comentario.Nombre:</strong> @comentario.Texto
-                <button class="btn btn-sm btn-danger" @onclick="() => EliminarComentario(comentario)"><i class="bi bi-trash3-fill"></i></button>
-            </li>
-        }
-    </ul>
-}
-else
-{
-    <p>No tienes comentarios aún.</p>
-}
+<div class="container row">
+    <div class="col-sm-4" style="text-align:center">
+        <!-- Aquí puedes personalizar según tus necesidades -->
+        <h3>Lista de Comentarios</h3>
 
-<hr />
+        <div class="list-group" style="text-align:left">
+            @if (ListaDeComentarios.Count > 0)
+            {
+                @foreach (var comentario in ListaDeComentarios)
+                {
+                    <button type="button" class="list-group-item list-group-item-action" @onclick="@((args) => VerComentario(comentario.id))">@comentario.comentario</button>
+                }
+            }
 
-<!-- Formulario para agregar nuevos comentarios -->
-<h3>Agregar Nuevo Comentario</h3>
-<form>
-    <div class="mb-3">
-        <label for="nombre" class="form-label">Nombre:</label>
-        <input type="text" class="form-control" id="nombre" @bind="nuevoComentario.Nombre" />
+            <button class="claseb btn btn-primary" @onclick="AgregarComentario">Agregar Nuevo Comentario</button>
+        </div>
     </div>
-    <div class="mb-3">
-        <label for="texto" class="form-label">Comentario:</label>
-        <textarea class="form-control" id="texto" @bind="nuevoComentario.Texto"></textarea>
+    <div class="col-sm-8" style="text-align:center">
+        <!-- Aquí puedes personalizar según tus necesidades -->
+        <h2>Info. Comentario</h2>
+        <div class="">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="nombre" class="form-label">Comentario</label>
+                        <textarea class="form-control" @bind="@nuevoComentario.comentario" style="background: #ececec;"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <button class="claseb btn btn-primary col" @onclick="GuardarComentario">Guardar</button>
+
+            @if (nuevoComentario.id != 0)
+            {
+                <button class="claseb btn btn-danger col" @onclick="EliminarComentario">Eliminar</button>
+            }
+        </div>
     </div>
-    <button type="button" class="btn btn-primary" @onclick="AgregarComentario">Agregar Comentario</button>
-</form>
+</div>
+
+<style>
+    .claseb {
+        margin: 5px;
+    }
+</style>
 
 @code {
-    private List<Comentario> comentarios = new List<Comentario>
-    {
-        new Comentario { Nombre = "Usuario1", Texto = "¡Gran producto!" },
-        new Comentario { Nombre = "Usuario2", Texto = "Me encanta este servicio." }
-        // Puedes inicializar la lista con comentarios desde tu backend o base de datos
-    };
+    public Comentario nuevoComentario = new Comentario();
+    private List<Comentario> ListaDeComentarios = new List<Comentario>();
+    public Cuenta usuario = new Cuenta();
+    public string Url = "comentarios.php";
 
-    private Comentario nuevoComentario = new Comentario();
-
-    private void AgregarComentario()
-    {
-        // Lógica para agregar el nuevo comentario
-        comentarios.Add(nuevoComentario);
-        nuevoComentario = new Comentario(); // Limpiar el formulario después de agregar el comentario
-    }
-
-    private void EliminarComentario(Comentario comentario)
-    {
-        // Lógica para eliminar un comentario
-        comentarios.Remove(comentario);
-    }
-
-    public class Comentario
-    {
-        public string Nombre { get; set; }
-        public string Texto { get; set; }
-    }
 
     protected override async Task OnInitializedAsync()
     {
+        nuevoComentario = new Comentario();
         var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "user");
         if (temp != null)
         {
-           
+            usuario = Newtonsoft.Json.JsonConvert.DeserializeObject<Cuenta>(temp);
+            var oRespuesta = await HttpClient.GetFromJsonAsync<Respuesta<List<Comentario>>>(Url + "?id_usuario=" + usuario.ID);
+            if (oRespuesta.data != null)
+            {
+                ListaDeComentarios = oRespuesta.data;
+
+            }
+            else
+            {
+                ListaDeComentarios = new List<Comentario>();
+            }
+            // Aquí deberías cargar la lista de comentarios asociados al usuario desde tu backend
+            // Ejemplo: ListaDeComentarios = await ObtenerComentariosAsync(usuario.ID);
         }
         else
         {
             oMenu.NavigateTo("/notaccess");
         }
     }
+
+    public async Task VerComentario(int id)
+    {
+        nuevoComentario = new Comentario();
+        foreach (var tar in ListaDeComentarios)
+        {
+            if (tar.id == id)
+            {
+                nuevoComentario = tar;
+            }
+        }
+    }
+
+    public async Task AgregarComentario()
+    {
+        // Lógica para preparar la interfaz y el modelo para agregar un nuevo comentario
+        nuevoComentario = new Comentario();
+    }
+
+    public async Task GuardarComentario()
+    {
+        nuevoComentario.comentario = EspaciosHelper.EliminarEspaciosRepetidos(nuevoComentario.comentario);
+        nuevoComentario.idusuario = usuario.ID;
+        if (EspaciosHelper.ValidarCadena(nuevoComentario.comentario))
+        {
+            var response = new HttpResponseMessage();
+            if (nuevoComentario.id == 0)
+            {
+                response = await HttpClient.PostAsJsonAsync<Comentario>(Url, nuevoComentario);
+            }
+            else
+            {
+                response = await HttpClient.PutAsJsonAsync<Comentario>(Url, nuevoComentario);
+            }
+            var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<Comentario>>().Result;
+            if (oRespuesta.status == "success")
+            {
+                await OnInitializedAsync();
+                
+            }
+        }
+        else
+        {
+            ShowMessage(ToastType.Danger, "Asegure haber ingresado toda la información.");
+        }
+    }
+
+    public async Task EliminarComentario()
+    {
+        // Lógica para eliminar un comentario
+        // Ejemplo: var response = await HttpClient.DeleteAsync($"{Url}/{nuevoComentario.id}");
+        // ... (Resto de la lógica)
+        var response = await HttpClient.DeleteFromJsonAsync<Respuesta<object>>(Url + "?id=" + nuevoComentario.id);
+        if (response.status == "success")
+        {
+            await OnInitializedAsync();
+        }
+    }
+
+    // Resto del código necesario según tus necesidades
+    List<ToastMessage> messages = new List<ToastMessage>();
+
+    private void ShowMessage(ToastType toastType, string obser) => messages.Add(CreateToastMessage(toastType, obser));
+
+    private ToastMessage CreateToastMessage(ToastType toastType, string obser)
+    => new ToastMessage
+        {
+            Type = toastType,
+            Title = "UBook Notificación",
+            HelpText = $"{DateTime.Now}",
+            Message = obser,
+        };
 }

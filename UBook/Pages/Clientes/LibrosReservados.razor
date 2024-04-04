@@ -30,12 +30,6 @@ else
                 <input type="search" autofocus @bind="vcNombre" @bind:event="oninput" placeholder="Buscar..." />
             </div>
         </div>
-        @if (rol == "admin")
-        {
-            <div class="col-sm-2">
-                <a class="btn btn-sm btn-outline-success btn-sm" href="/reglibro"><i class="bi bi-plus-circle"></i>Nuevo</a>
-            </div>
-        }
     </div>
     <div class="row">
 
@@ -53,6 +47,18 @@ else
                         <div class="row">
                             <div class="col">
                                 <h3>@lib.nombre</h3>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                @if (lib.nuevo == 1)
+                                {
+                                    <p>*Nuevo*</p>
+                                }
+                                else
+                                {
+                                    <p>*Usado*</p>
+                                }
                             </div>
                         </div>
                         <div class="row">
@@ -79,24 +85,32 @@ else
 }
 @code {
     public IQueryable<Libro> maestroLibros { get; set; } = null;
-    private string Url = "libros.php";
+    private string Url = "misreservas.php?id_usuario=";
     private bool carga { get; set; } = true;
     PaginationState paginacion = new PaginationState { ItemsPerPage = 10 };
     QuickGrid<Libro> refGrid;
     string vcNombre = string.Empty;
-    DateTime min = new DateTime(2000, 1, 1);
-    DateTime minMedals = new DateTime(2000, 1, 1);
-    DateTime maxMedals = DateTime.Now;
+    DateOnly min = new DateOnly(2000, 1, 1);
+    DateOnly minMedals = new DateOnly(2000, 1, 1);
+    DateOnly maxMedals = DateOnly.FromDateTime(DateTime.Now);
     string rol = string.Empty;
+    public Cuenta usuario = new Cuenta();
 
     protected override async Task OnInitializedAsync()
     {
         var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "user");
         if (temp != null)
         {
-            var oRespuesta = await HttpClient.GetFromJsonAsync<Respuesta<List<Libro>>>(Url);
-            maestroLibros = oRespuesta.data.AsQueryable();
-
+            usuario = Newtonsoft.Json.JsonConvert.DeserializeObject<Cuenta>(temp);
+            var oRespuesta = await HttpClient.GetFromJsonAsync<Respuesta<List<Libro>>>(Url + usuario.ID);
+            if (oRespuesta.data != null)
+            {
+                maestroLibros = oRespuesta.data.AsQueryable();
+            }
+            else
+            {
+                maestroLibros = new List<Libro>().AsQueryable();
+            }
             carga = false;
         }
         else

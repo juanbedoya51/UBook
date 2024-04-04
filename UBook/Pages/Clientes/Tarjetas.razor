@@ -1,0 +1,219 @@
+﻿@page "/tarjeta"
+@inject HttpClient HttpClient
+@using System.Net.Http.Json
+@using UBook.Data
+@using System.Globalization;
+@using Newtonsoft.Json;
+@inject NavigationManager oMenu
+@inject IJSRuntime JSRuntime
+@using System;
+
+
+<Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.BottomRight" />
+
+<div class="container row">
+    <div class="col-sm-4" style="text-align:center">
+        <img src="Imagenes/ubook.png" style="width:150px" />
+
+        <h3>Lista de Tarjetas</h3>
+
+        <div class="list-group" style="text-align:left">
+            @if(ListaDeTarjetas.Count > 0)
+            {
+                @foreach (var tar in ListaDeTarjetas)
+                {
+                    <button type="button" class="list-group-item list-group-item-action" @onclick="@((args) => Vertar(tar.id_tarjeta))">@tar.numero</button>
+                }
+            }
+            
+            <button class="claseb btn btn-primary" @onclick="Agregar">Agregar Nueva</button>
+        </div>
+    </div>
+    <div class="col-sm-8" style="text-align:center">
+        <h2>Info. Tarjeta</h2>
+        <div class="">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="nombre" class="form-label">Nombre del Titular</label>
+                        <input type="text" class="form-control" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevaTarjeta.titular">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="nombre" class="form-label">Fecha de venc. (Mes/Año)</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <select class="form-control" id="mes" @bind="mes" style="background: #ececec;">
+                                    <option disabled selected value="">Mes</option>
+                                    @foreach (var depto in Meses)
+                                    {
+                                        <option value="@depto">@depto</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <select class="form-control" id="mes" @bind="anio" style="background: #ececec;">
+                                    <option disabled selected value="">Año</option>
+                                    @foreach (var depto in Anios)
+                                    {
+                                        <option value="@depto">@depto</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="nombre" class="form-label">Número de la Tarjeta</label>
+                        <input type="text" class="form-control" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevaTarjeta.numero">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="nombre" class="form-label">CVV</label>
+                        <input type="number" class="form-control" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevaTarjeta.cvc">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="mb-3" style="text-align:left">
+                        <label for="nombre" class="form-label">Saldo</label>
+                        <CurrencyInput TValue="int" @bind-Value="@nuevaTarjeta.saldo" Placeholder="Enter amount" class="form-control" id="precio" style="background: #ececec;" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <img src="Imagenes/tarjetas-credito-logos.png" style="width:150px" />
+        <div class="row">
+            @* @if (nuevaTarjeta.id_tarjeta != 0)
+            {
+                <button class="claseb btn btn-danger col">Eliminar</button>
+            } *@
+            @if (nuevaTarjeta.id_tarjeta == 0)
+            {
+                <button class="claseb btn btn-primary col" @onclick="Guardar">Guardar</button>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .claseb {
+        margin: 5px;
+    }
+</style>
+
+
+@code {
+    public Tarjeta nuevaTarjeta = new Tarjeta();
+    public Cuenta usuario = new Cuenta();
+    public string Url = "tarjetadecompra.php";
+    public string mes { get; set; } = string.Empty;
+    public string anio { get; set; } = string.Empty;
+    private List<string> Meses = new List<string> { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" };
+    private List<string> Anios = new List<string> { "24", "25", "26", "27", "28", "29", "30" };
+    private List<Tarjeta> ListaDeTarjetas = new List<Tarjeta>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "user");
+        if (temp != null)
+        {
+            usuario = Newtonsoft.Json.JsonConvert.DeserializeObject<Cuenta>(temp);
+            var oRespuesta = await HttpClient.GetFromJsonAsync<Respuesta<List<Tarjeta>>>(Url + "?user_id=" + usuario.ID);
+            if (oRespuesta.data != null)
+            {
+                ListaDeTarjetas = oRespuesta.data;
+
+            }
+            else
+            {
+                ListaDeTarjetas = new List<Tarjeta>();
+            }
+        }
+        else
+        {
+            oMenu.NavigateTo("/notaccess");
+        }
+    }
+
+    public async Task Vertar(int id)
+    {
+        mes = string.Empty;
+        anio = string.Empty;
+        nuevaTarjeta = new Tarjeta();
+        foreach (var tar in ListaDeTarjetas)
+        {
+            if (tar.id_tarjeta == id)
+            {
+                nuevaTarjeta = tar;
+                string[] partes = nuevaTarjeta.fecha_vencimiento.Split('/');
+                mes = partes[0];
+                anio = partes[1];
+            }
+        }
+    }
+
+    public async Task Agregar()
+    {
+        mes = string.Empty;
+        anio = string.Empty;
+        nuevaTarjeta = new Tarjeta();
+    }
+
+    public Respuesta<Tarjeta> oRespuesta = new Respuesta<Tarjeta>();
+    public async Task Guardar()
+    {
+        nuevaTarjeta.titular = EspaciosHelper.EliminarEspaciosRepetidos(nuevaTarjeta.titular);
+        nuevaTarjeta.numero = EspaciosHelper.EliminarTodosLosEspacios(nuevaTarjeta.numero);
+        mes = EspaciosHelper.EliminarTodosLosEspacios(mes);
+        anio = EspaciosHelper.EliminarTodosLosEspacios(anio);
+        nuevaTarjeta.id_usuario = usuario.ID;
+        if ( EspaciosHelper.ValidarCadena(nuevaTarjeta.titular) && EspaciosHelper.ValidarCadena(nuevaTarjeta.numero) && EspaciosHelper.ValidarCadena(mes) && EspaciosHelper.ValidarCadena(anio))
+        {
+            nuevaTarjeta.fecha_vencimiento = mes + "/" + anio;
+            var response = await HttpClient.PostAsJsonAsync<Tarjeta>(Url, nuevaTarjeta);
+            oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<Tarjeta>>().Result;
+            if (oRespuesta.status == "success")
+            {
+                await OnInitializedAsync();
+            }
+        }
+        else
+        {
+            ShowMessage(ToastType.Danger, "Asegure haber ingresado toda la información.");
+        }
+
+    }
+
+    public async Task EliminarComentario()
+    {
+        // Lógica para eliminar un comentario
+        // Ejemplo: var response = await HttpClient.DeleteAsync($"{Url}/{nuevoComentario.id}");
+        // ... (Resto de la lógica)
+        var response = await HttpClient.DeleteFromJsonAsync<Respuesta<object>>(Url + "?id=" + nuevaTarjeta.id_tarjeta);
+        if (response.status == "success")
+        {
+            await OnInitializedAsync();
+        }
+    }
+
+
+    List<ToastMessage> messages = new List<ToastMessage>();
+
+    private void ShowMessage(ToastType toastType, string obser) => messages.Add(CreateToastMessage(toastType, obser));
+
+    private ToastMessage CreateToastMessage(ToastType toastType, string obser)
+    => new ToastMessage
+        {
+            Type = toastType,
+            Title = "UBook Notificación",
+            HelpText = $"{DateTime.Now}",
+            Message = obser,
+        };
+}

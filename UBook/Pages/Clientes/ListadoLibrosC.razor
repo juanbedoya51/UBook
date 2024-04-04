@@ -23,44 +23,61 @@ else
 {
     <PageTitle>Info Libro</PageTitle>
     <Toasts class="p-3" Messages="messages" AutoHide="true" Delay="6000" Placement="ToastsPlacement.BottomRight" />
-    
+
     <div class="row">
 
         @foreach (var lib in filtroLibros)
         {
-            <div class="col-lg-6">
-                <div class="row" style="background-color: #EAEAEA; margin: 5px; max-width: 680px; border: 20px; padding: 10px; align-items: center; align-content: center; text-align: center;}">
-                    <div class="col">
-                        <img src="@($"data:image/jpeg;base64,{lib.imagen}")" alt="Producto" class="img-fluid" style="min-width:100px" />
-                    </div>
+            if (lib.estado == "Disponible")
+            {
 
-                    <div class="col">
-                        <div class="row">
-                            <div class="col">
-                                <h3>@lib.nombre</h3>
+
+                <div class="col-lg-6">
+                    <div class="row" style="background-color: #EAEAEA; margin: 5px; max-width: 680px; border: 20px; padding: 10px; align-items: center; align-content: center; text-align: center;}">
+                        <div class="col">
+                            <img src="@($"data:image/jpeg;base64,{lib.imagen}")" alt="Producto" class="img-fluid" style="min-width:100px" />
+                        </div>
+
+                        <div class="col">
+                            <div class="row">
+                                <div class="col">
+                                    <h3>@lib.nombre</h3>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    @if (lib.nuevo == 1)
+                                    {
+                                        <p>*Nuevo*</p>
+                                    }
+                                    else
+                                    {
+                                        <p>*Usado*</p>
+                                    }
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <p>
+                                        @lib.precio.ToString("C0",CultureInfo.CreateSpecificCulture("en-US"))
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col">
-                                <p>
-                                    @lib.precio.ToString("C0",CultureInfo.CreateSpecificCulture("en-US"))
-                                </p>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="col">
-                        <div class="row mb-3 btn">
-                            <i class="bi bi-cart3" style="font-size:30px; color:green"></i>
-                            <h5>Comprar</h5>
-                        </div>
-                        <div class="row btn mb-3">
-                            <i class="bi bi-bag-check" style="font-size:30px; color: #DEBD29"></i>
-                            <h5>Reservar</h5>
+                        <div class="col">
+                            <div class="row mb-3 btn" @onclick="@((args) => Comprar(lib.ID))">
+                                <i class="bi bi-cart3" style="font-size:30px; color:green"></i>
+                                <h5>Comprar</h5>
+                            </div>
+                            <div class="row btn mb-3" @onclick="@((args) => Reservar(lib.ID))">
+                                <i class="bi bi-bag-check" style="font-size:30px; color: #DEBD29"></i>
+                                <h5>Reservar</h5>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            }
         }
     </div>
 }
@@ -73,9 +90,9 @@ else
     private bool carga { get; set; } = true;
     PaginationState paginacion = new PaginationState { ItemsPerPage = 10 };
     QuickGrid<Libro> refGrid;
-    DateTime min = new DateTime(2000, 1, 1);
-    DateTime minMedals = new DateTime(2000, 1, 1);
-    DateTime maxMedals = DateTime.Now;
+    DateOnly min = new DateOnly(2000, 1, 1);
+    DateOnly minMedals = new DateOnly(2000, 1, 1);
+    DateOnly maxMedals = DateOnly.FromDateTime(DateTime.Now);
     string rol = string.Empty;
 
     protected override async Task OnInitializedAsync()
@@ -123,6 +140,52 @@ else
             }
 
             return result;
+        }
+    }
+
+    public Cuenta usuario = new Cuenta();
+
+    public async Task Comprar(int idlibro)
+    {
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "user");
+        if (temp != null)
+        {
+            oMenu.NavigateTo("/comprar/" + idlibro);
+        }
+        else
+        {
+            oMenu.NavigateTo("/acceder");
+        }
+    }
+
+    public class model
+    {
+        public int id_usuario { get; set; }
+        public int id_libro { get; set; }
+    }
+    public async Task Reservar(int idlibro)
+    {
+        var temp = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "user");
+        if (temp != null)
+        {
+            usuario = Newtonsoft.Json.JsonConvert.DeserializeObject<Cuenta>(temp);
+            var cuerpo = new model();
+            cuerpo.id_libro = idlibro;
+            cuerpo.id_usuario = usuario.ID;
+            var response = await HttpClient.PostAsJsonAsync<model>("reservarlibro.php", cuerpo);
+            var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<object>>().Result;
+            if (oRespuesta.status == "success")
+            {
+                ShowMessage(ToastType.Success, "Libro reservado con éxito");
+            }
+            else
+            {
+                ShowMessage(ToastType.Danger, oRespuesta.message);
+            }
+        }
+        else
+        {
+            oMenu.NavigateTo("/acceder");
         }
     }
 

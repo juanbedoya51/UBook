@@ -16,30 +16,52 @@
     </div>
     <div class="col-md-4" style="text-align:center">
         <h3>Crear una cuenta nueva</h3>
-
+        <div class="mb-3" style="text-align:left">
+            <label for="nombre" class="form-label">DNI</label>
+            <input type="text" class="form-control" id="nombre" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevoCuenta.dni">
+        </div>
         <div class="mb-3" style="text-align:left">
             <label for="nombre" class="form-label">Nombre</label>
             <input type="email" class="form-control" id="nombre" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevoCuenta.nombre">
         </div>
         <div class="mb-3" style="text-align:left">
-            <label for="Email" class="form-label">Correo electrónico</label>
-            <input type="email" class="form-control" id="Email" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevoCuenta.correo">
+            <label for="nombre" class="form-label">Apellido</label>
+            <input type="email" class="form-control" id="nombre" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevoCuenta.apellido">
         </div>
         <div class="mb-3" style="text-align:left">
             <label for="fn" class="form-label">Fecha de nacimiento</label>
             <input type="date" class="form-control" id="fn" style="background: #ececec;" @bind-value="nuevoCuenta.fecha_nacimiento">
         </div>
         <div class="mb-3" style="text-align:left">
-            <label for="pregunta" class="form-label">Pregunta de recuperación</label>
-            <input type="text" class="form-control" id="pregunta" style="background: #ececec;" @bind-value="nuevoCuenta.pregunta">
+            <label for="Email" class="form-label">Lugar de Nacimiento</label>
+            <input type="email" class="form-control" id="Email" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevoCuenta.lugar_nacimiento">
         </div>
         <div class="mb-3" style="text-align:left">
-            <label class="form-label">Respuesta(Una sola palabra en minusculas)</label>
-            <input type="text" class="form-control" style="background: #ececec;" @bind-value="nuevoCuenta.respuesta">
+            <label for="pregunta" class="form-label">Dirección de Envío</label>
+            <input type="text" class="form-control" id="pregunta" style="background: #ececec;" @bind-value="nuevoCuenta.direccion">
         </div>
+        <div class="mb-3" style="text-align:left">
+            <label for="pregunta" class="form-label">Género</label>
+            <select class="form-select" aria-label="Default select example" id="estado" style="background: #ececec;" @bind="@nuevoCuenta.genero">
+                <option selected disabled value="10">Seleccionar</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Femenino">Femenino</option>
+                <option value="Otro">Otro</option>
+            </select>
+        </div>
+        <div class="mb-3" style="text-align:left">
+            <label for="Email" class="form-label">Correo electrónico</label>
+            <input type="email" class="form-control" id="Email" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevoCuenta.correo">
+        </div>
+        
+        @* <div class="mb-3" style="text-align:left">
+            <label for="Email" class="form-label">Usuario</label>
+            <input type="email" class="form-control" id="Email" aria-describedby="emailHelp" style="background: #ececec;" @bind-value="nuevoCuenta.usuario">
+        </div> *@
         <div class="mb-3" style="text-align:left">
             <label for="contrasena1" class="form-label">Clave</label>
             <input type="password" class="form-control" id="contrasena1" style="background: #ececec;" @bind-value="nuevoCuenta.contrasena">
+            <p style="color:red">@msm</p>
         </div>
         <div class="mb-3" style="text-align:left">
             <label for="contrasena2" class="form-label"> Repetir Clave</label>
@@ -49,6 +71,8 @@
 
     </div>
 </div>
+@* @Newtonsoft.Json.JsonConvert.SerializeObject(nuevoCuenta) *@
+
 @code {
 
     private Cuenta nuevoCuenta = new Cuenta();
@@ -80,9 +104,9 @@
             }
         }
 
-        if(rol == "")
+        if (rol == "")
         {
-            nuevoCuenta.fecha_nacimiento = DateTime.Now;
+            nuevoCuenta.fecha_nacimiento = DateOnly.FromDateTime(DateTime.Now);
 
         }
         else
@@ -91,31 +115,55 @@
         }
     }
 
-
+    public string msm { get; set; } = string.Empty;
     private async Task CrearCuentan()
     {
-        if (nuevoCuenta.contrasena == Contrasena2)
+        nuevoCuenta.correo = EspaciosHelper.EliminarTodosLosEspacios(nuevoCuenta.correo);
+        nuevoCuenta.direccion = EspaciosHelper.EliminarEspaciosRepetidos(nuevoCuenta.direccion);
+        nuevoCuenta.nombre = EspaciosHelper.EliminarEspaciosRepetidos(nuevoCuenta.nombre);
+
+        if (EspaciosHelper.ValidarCadena(nuevoCuenta.correo) && EspaciosHelper.ValidarCadena(nuevoCuenta.direccion) && EspaciosHelper.ValidarCadena(nuevoCuenta.nombre))
         {
-            var response = await HttpClient.PostAsJsonAsync<Cuenta>(Url, nuevoCuenta);
-            var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<Cuenta>>().Result;
-            if (oRespuesta.status == "success")
+            if (!EspaciosHelper.TieneEspacios(nuevoCuenta.contrasena))
             {
-                nuevoCuenta = oRespuesta.data;
-                nuevoCuenta.contrasena = "";
-                var temp = Newtonsoft.Json.JsonConvert.SerializeObject(nuevoCuenta);
-                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "user", temp);
-                await JSRuntime.InvokeVoidAsync("location.reload");
-                oMenu.NavigateTo("/editarcuenta/" + oRespuesta.data.ID);
+                msm = ValidadorContraseña.ValidarContraseña(nuevoCuenta.contrasena);
+                if (msm == "La contraseña es válida.")
+                {
+                    msm = string.Empty;
+                    if (nuevoCuenta.contrasena == Contrasena2)
+                    {
+                        var response = await HttpClient.PostAsJsonAsync<Cuenta>(Url, nuevoCuenta);
+                        var oRespuesta = response.Content.ReadFromJsonAsync<Respuesta<Cuenta>>().Result;
+                        if (oRespuesta.status == "success")
+                        {
+                            nuevoCuenta = oRespuesta.data;
+                            nuevoCuenta.contrasena = "";
+                            var temp = Newtonsoft.Json.JsonConvert.SerializeObject(nuevoCuenta);
+                            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "user", temp);
+                            oMenu.NavigateTo("/acceder");
+                        }
+                        else
+                        {
+                            ShowMessage(ToastType.Danger, oRespuesta.message);
+                        }
+                    }
+                    else
+                    {
+                        ShowMessage(ToastType.Danger, "Las contraseñas no coinciden");
+                    }
+                }
             }
             else
             {
-                ShowMessage(ToastType.Danger, oRespuesta.message);
+                ShowMessage(ToastType.Danger, "La contraseña no debe tener espacios");
             }
+            
         }
         else
         {
-            ShowMessage(ToastType.Danger, "Las contraseñas no coinciden");
+            ShowMessage(ToastType.Danger, "Asegure haber ingresado toda la información.");
         }
+        
     }
 
     List<ToastMessage> messages = new List<ToastMessage>();

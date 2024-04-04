@@ -14,12 +14,12 @@
         <h3>Lista de Direcciones</h3>
         
         <div class="list-group" style="text-align:left">
-            <button type="button" class="list-group-item list-group-item-action active">
-                Prueba para seleccionado
-            </button>
-            @foreach (var direccion in ListaDeDirecciones)
+            @if (ListaDeDirecciones.Count > 0)
             {
-                <button type="button" class="list-group-item list-group-item-action">@direccion</button>
+                @foreach (var direccion in ListaDeDirecciones)
+                {
+                    <button type="button" class="list-group-item list-group-item-action">@direccion</button>
+                }
             }
             <button class="claseb btn btn-primary">Agregar Nueva</button>
         </div>
